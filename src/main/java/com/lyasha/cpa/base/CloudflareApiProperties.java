@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 @Builder
 @AllArgsConstructor
-public class CloudflareApiConfig {
+public class CloudflareApiProperties {
 
     private String email;
     private String apiKey;

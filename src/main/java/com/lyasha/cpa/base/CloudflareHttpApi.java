@@ -15,20 +15,20 @@ public class CloudflareHttpApi {
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     private final OkHttpClient httpClient;
 
-    public CloudflareHttpApi(CloudflareApiConfig config) {
+    public CloudflareHttpApi(CloudflareApiProperties properties) {
         this.httpClient = new OkHttpClient().newBuilder()
                 .addInterceptor(chain -> {
-                    if (config.getApiToken() != null) {
+                    if (properties.getApiToken() != null) {
                         var request = chain.request().newBuilder()
                                 .header("Content-Type", "application/json")
-                                .header("Authorization", "Bearer " + config.getApiToken())
+                                .header("Authorization", "Bearer " + properties.getApiToken())
                                 .build();
                         return chain.proceed(request);
                     }
                     var request = chain.request().newBuilder()
                             .header("Content-Type", "application/json")
-                            .header("X-Auth-Email", config.getEmail())
-                            .header("X-Auth-Key", config.getApiKey())
+                            .header("X-Auth-Email", properties.getEmail())
+                            .header("X-Auth-Key", properties.getApiKey())
                             .build();
                     return chain.proceed(request);
                 })
