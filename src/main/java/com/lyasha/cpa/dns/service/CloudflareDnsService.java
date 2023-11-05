@@ -1,48 +1,35 @@
 package com.lyasha.cpa.dns.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lyasha.cpa.base.CloudflareApiResponse;
-import com.lyasha.cpa.base.CloudflareHttpApi;
-import com.lyasha.cpa.dns.domain.DnsRecord;
+import com.lyasha.cpa.dns.api.DnsOperationApi;
+import com.lyasha.cpa.dns.api.IpAddrApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.List;
-
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SNAKE_CASE;
 
 @RequiredArgsConstructor
 @Slf4j
 public class CloudflareDnsService {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper()
-            .setPropertyNamingStrategy(SNAKE_CASE)
-            .disable(FAIL_ON_UNKNOWN_PROPERTIES);
-    private final CloudflareHttpApi httpApi;
+    private final DnsOperationApi dnsOperationApi;
+    private final IpAddrApi ipAddrApi;
 
-    public List<DnsRecord> getDnsRecords(String zoneId) throws JsonProcessingException {
-        String url = "/zones/" + zoneId + "/dns_records";
-        return objectMapper.readValue(httpApi.get(url), new TypeReference<CloudflareApiResponse<List<DnsRecord>>>() {}).getResult();
+    public void updateDnsIp(String zoneId, String type, String name) throws JsonProcessingException {
+        var dnsRecords = dnsOperationApi.getDnsRecords(zoneId);
+        var currentIp = ipAddrApi.getPublicIpv4Addr();
+        dnsRecords.stream()
+                .filter(r -> r.getType().equals(type) && r.getName().equals(name))
+                .findAny()
+                .ifPresent(r -> {
+                    log.debug("Current IP address: {}, DNS record IP address: {}", r.getContent(), r.getContent());
+                    if (!r.getContent().equals(currentIp)) {
+                        try {
+                            dnsOperationApi.updateDnsRecord(r, currentIp);
+                            log.info("Updated domain {} to new IP address {}", r.getName(), currentIp);
+                        } catch (JsonProcessingException e) {
+                            log.error("Failed to update domain {} to new IP address {}", r.getName(), currentIp);
+                        }
+                    }
+                });
     }
 
-    public DnsRecord createDnsRecord(String zoneId, DnsRecord dnsRecord) throws JsonProcessingException {
-        String url = "/zones/" + zoneId + "/dns_records";
-        return objectMapper.readValue(httpApi.post(url, objectMapper.writeValueAsString(dnsRecord)), new TypeReference<CloudflareApiResponse<DnsRecord>>() {}).getResult();
-    }
-
-    public void updateDnsRecord(String zoneId, String dnsRecordId, String content, boolean proxied) throws JsonProcessingException {
-        String url = "/zones/" + zoneId + "/dns_records/" + dnsRecordId;
-        httpApi.put(url, objectMapper.writeValueAsString(new DnsRecord() {{
-            setContent(content);
-            setProxied(proxied);
-        }}));
-    }
-
-    public void deleteDnsRecord(String zoneId, String dnsRecordId) {
-        String url = "/zones/" + zoneId + "/dns_records/" + dnsRecordId;
-        httpApi.delete(url);
-    }
 }

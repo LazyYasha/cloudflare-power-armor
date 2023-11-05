@@ -9,11 +9,11 @@ import java.util.List;
 @AllArgsConstructor
 public class CloudflareDnsProperties {
 
-    private List<DnsRecord> dnsRecords;
+    private List<DDnsTarget> DDnsTargets;
 
     @Data
     @AllArgsConstructor
-    public static class DnsRecord {
+    public static class DDnsTarget {
         private String zoneId;
         private String type;
         private String name;
