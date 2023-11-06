@@ -1,3 +1,18 @@
 logging:
   level:
     root: info
+
+cloudflare-client:
+  dns:
+    api-token:
+
+cpa:
+  ddns:
+    enable: false
+    ip-provider:
+    targets:
+      - zone-id:
+        name:
+        type:
+        proxied:
+
